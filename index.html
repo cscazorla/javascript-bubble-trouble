@@ -1,0 +1,95 @@
+<html>
+    <head>
+        <title>Bubble Trouble</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" type="text/css" href="style/style.css" />
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <canvas id="canvas"></canvas>
+        </div>
+    </body>
+    <script type="module">
+        import Balls from './js/Balls.js'
+        import Player from './js/Player.js'
+        import Floor from './js/Floor.js'
+
+        const WIDTH = 800
+        const HEIGHT = 800
+        const dt = 0.02
+
+        let canvas = document.getElementById('canvas')
+        canvas.width = WIDTH
+        canvas.height = HEIGHT
+        let ctx = canvas.getContext('2d')
+
+        let balls = new Balls(ctx, WIDTH)
+        let floor = new Floor(
+            ctx,
+            0,
+            (9 / 10) * HEIGHT,
+            WIDTH,
+            (1 / 10) * HEIGHT
+        )
+        const PLAYER_WIDTH = 20
+        let player = new Player(
+            ctx,
+            600,
+            (9 / 10) * HEIGHT - 40,
+            PLAYER_WIDTH,
+            40
+        )
+        let gameover = false
+
+        window.onload = start
+
+        function frame() {
+            window.requestAnimationFrame(frame)
+
+            if (!gameover) update(dt)
+            render()
+        }
+
+        function start() {
+            canvas.addEventListener('mousemove', function (e) {
+                if (!gameover && e.offsetX <= WIDTH - PLAYER_WIDTH)
+                    player.x = e.offsetX
+            })
+
+            canvas.addEventListener('click', clickPlayer)
+
+            balls.add(5, 100, 200, 200)
+            balls.add(5, 700, 200, -200)
+
+            frame()
+        }
+
+        function update(dt) {
+            balls.update(dt)
+
+            for (let ball of balls.children()) {
+                if (ball.enabled) {
+                    ball.resolveCollisionWithFloor(floor)
+                    ball.resolveCollisionWithWorldBounds(WIDTH)
+                    if (ball.hitPlayer(player)) {
+                        gameover = true
+                        canvas.removeEventListener('click', clickPlayer)
+                    }
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            balls.render()
+            floor.render()
+            player.render()
+        }
+
+        function clickPlayer() {
+            player.shoot()
+                balls.checkShoot(player.x)
+        }
+    </script>
+</html>
